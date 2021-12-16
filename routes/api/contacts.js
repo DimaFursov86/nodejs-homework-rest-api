@@ -5,9 +5,9 @@ const {NotFound, BadRequest} = require("http-errors");
 const Joi = require("joi");
 
 const schemaUpdate = Joi.object({
-     name: Joi.string(),    
-     email: Joi.string(),
-     phone: Joi.string()
+     name: Joi.string().required(),    
+     email: Joi.string().required(),
+     phone: Joi.string().required()
    }).min(1) 
 
 router.get('/', async (req, res, next) => {
@@ -22,9 +22,9 @@ router.get('/', async (req, res, next) => {
 })
 
 router.get('/:contactId', async (req, res, next) => {
-  const {id} = req.params;
+  const {contactId} = req.params;
     try {
-        const contact = await contactsOperations.getContactById(id);
+        const contact = await contactsOperations.getContactById(contactId);
         if(!contact){
             throw new NotFound();
         }
@@ -52,8 +52,8 @@ router.post('/', async (req, res, next) => {
 
 router.delete('/:contactId', async (req, res, next) => {
    try {
-        const {id} = req.params;
-        const deleteContact = await contactsOperations.removeContact(id);
+        const {contactId} = req.params;
+        const deleteContact = await contactsOperations.removeContact(contactId);
         if(!deleteContact){
             throw new NotFound();
         }
@@ -71,7 +71,7 @@ router.put('/:contactId', async (req, res, next) => {
             throw new BadRequest("missing fields");
         }
         const {contactId} = req.params;
-        const updateContact = await contactsOperations.updateContact({contactId, ...req.body});
+        const updateContact = await contactsOperations.updateContact({id: contactId, ...req.body});
         if(!updateContact){
             throw new NotFound();
         }
