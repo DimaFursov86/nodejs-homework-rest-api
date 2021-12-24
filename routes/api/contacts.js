@@ -1,24 +1,25 @@
 const express = require('express')
 const router = express.Router()
-const contactsOperations = require('../../model/contacts');
+const {schemaUpdate} = require('../../models/contact');
+const {Contact} = require('../../models');
 const {NotFound, BadRequest} = require("http-errors");
-const Joi = require("joi");
+// const Joi = require("joi");
 
-const schemaUpdate = Joi.object({
-     name: Joi.string().required(),    
-  email: Joi.string()
-    .email({
-      minDomainSegments: 2,
-      tlds: { allow: ['com', 'net', 'org', 'ru', 'ua'] }
-    })
-    .pattern(/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i)
-    .required(),
-     phone: Joi.string().required()
-   }).min(1) 
+// const schemaUpdate = Joi.object({
+//      name: Joi.string().required(),    
+//   email: Joi.string()
+//     .email({
+//       minDomainSegments: 2,
+//       tlds: { allow: ['com', 'net', 'org', 'ru', 'ua'] }
+//     })
+//     .pattern(/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i)
+//     .required(),
+//      phone: Joi.string().required()
+//    }).min(1) 
 
 router.get('/', async (req, res, next) => {
   try{
-        const contacts = await contactsOperations.listContacts();
+        const contacts = await Contact.find();
         res.json(contacts);
     }
     catch(error){
@@ -48,7 +49,7 @@ router.post('/', async (req, res, next) => {
         if(error){
             throw new BadRequest("missing required name field");
         }
-        const newContact = await contactsOperations.addContact(req.body);
+        const newContact = await Contact.create(req.body);
         res.status(201).json(newContact);
     } catch (error) {
         next(error);
