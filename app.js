@@ -1,6 +1,8 @@
 const express = require('express')
 const logger = require('morgan')
 const cors = require('cors')
+const path = require("path");
+const fs = require("fs/promises");
 require("dotenv").config()
 
 const contactsRouter = require('./routes/api/contacts')
@@ -12,6 +14,9 @@ const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
 app.use(logger(formatsLogger))
 app.use(cors())
 app.use(express.json())
+
+const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
+app.use(logger('combined', { stream: accessLogStream }))
 
 app.use('/api/contacts', contactsRouter)
 

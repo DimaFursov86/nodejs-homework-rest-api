@@ -31,13 +31,16 @@ router.get('/', async (req, res, next) => {
 router.get('/:contactId', async (req, res, next) => {
   const {contactId} = req.params;
     try {
-        const contact = await contactsOperations.getContactById(contactId);
+        const contact = await Contact.findById(contactId);
         if(!contact){
             throw new NotFound();
         }
         res.json(contact);
     }
-    catch(error){
+    catch (error) {
+        if (error.message.includes("Cast to ObjectId faild")) {
+            error.status = 404;
+        }
         next(error);
     }
   
@@ -51,7 +54,10 @@ router.post('/', async (req, res, next) => {
         }
         const newContact = await Contact.create(req.body);
         res.status(201).json(newContact);
-    } catch (error) {
+   } catch (error) {
+       if (error.message.includes("validation faild")) {
+            error.status = 400;
+        }
         next(error);
     }
   
@@ -60,7 +66,7 @@ router.post('/', async (req, res, next) => {
 router.delete('/:contactId', async (req, res, next) => {
    try {
         const {contactId} = req.params;
-        const deleteContact = await contactsOperations.removeContact(contactId);
+        const deleteContact = await Contact.findByIdAndRemove(contactId);
         if(!deleteContact){
             throw new NotFound();
         }
@@ -73,20 +79,40 @@ router.delete('/:contactId', async (req, res, next) => {
 
 router.put('/:contactId', async (req, res, next) => {
    try {
-        const {error} = schemaUpdate.validate(req.body);
-        if(error){
-            throw new BadRequest("missing fields");
-        }
+        
         const {contactId} = req.params;
-        const updateContact = await contactsOperations.updateContact({id: contactId, ...req.body});
+        const updateContact = await Contact.findByIdAndUpdate({id: contactId, ...req.body}, {new: true});
         if(!updateContact){
             throw new NotFound();
         }
         res.json(updateContact);
-    } catch (error) {
+   } catch (error) {
+       if (error.message.includes("validation faild")) {
+            error.status = 400;
+        }
         next(error);
     }
  
 })
+
+router.patch('/:contactId/favorite', async (req, res, next) => {
+   try {
+        
+       const { contactId } = req.params;
+       const {favorite} = req.body
+        const updateContact = await Contact.findByIdAndUpdate({id: contactId}, {favorite}, {new: true});
+        if(!updateContact){
+            throw new NotFound();
+        }
+        res.json(updateContact);
+   } catch (error) {
+       if (error.message.includes("validation faild")) {
+            error.status = 400;
+        }
+        next(error);
+    }
+ 
+})
+
 
 module.exports = router

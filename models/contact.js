@@ -6,20 +6,19 @@ const Joi = require("joi");
 const contactSchema = Schema({
     name: {
         type: String,
-        require: true,
-        minlength: 2
+        require: [true, 'Set name for contact'],
     },   
     email: {
          type: String,
-        require: true,
-        unique: true
      },
      phone: {
          type: String,
-         require: true,
-        unique: true
+    },
+      favorite: {
+         type: Boolean,
+         default: false
      },
-})
+}, {versionKey: false, timestamps: true})
 
 const schemaUpdate = Joi.object({
      name: Joi.string().required(),    
