@@ -1,24 +1,13 @@
 const express = require('express')
 const router = express.Router()
-const contactsOperations = require('../../model/contacts');
+const {schemaUpdate} = require('../../models/contact');
+const {Contact} = require('../../models');
 const {NotFound, BadRequest} = require("http-errors");
-const Joi = require("joi");
 
-const schemaUpdate = Joi.object({
-     name: Joi.string().required(),    
-  email: Joi.string()
-    .email({
-      minDomainSegments: 2,
-      tlds: { allow: ['com', 'net', 'org', 'ru', 'ua'] }
-    })
-    .pattern(/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i)
-    .required(),
-     phone: Joi.string().required()
-   }).min(1) 
 
 router.get('/', async (req, res, next) => {
   try{
-        const contacts = await contactsOperations.listContacts();
+        const contacts = await Contact.find();
         res.json(contacts);
     }
     catch(error){
@@ -30,13 +19,17 @@ router.get('/', async (req, res, next) => {
 router.get('/:contactId', async (req, res, next) => {
   const {contactId} = req.params;
     try {
-        const contact = await contactsOperations.getContactById(contactId);
+        const contact = await Contact.findById(contactId);
         if(!contact){
-            throw new NotFound();
+            throw new NotFound("Not Found");
         }
         res.json(contact);
     }
-    catch(error){
+    catch (error) {
+        if (error.message.includes("Cast to ObjectId failed")) {
+            error.status = 404;
+            error.message = "Not Found"
+        }
         next(error);
     }
   
@@ -48,9 +41,13 @@ router.post('/', async (req, res, next) => {
         if(error){
             throw new BadRequest("missing required name field");
         }
-        const newContact = await contactsOperations.addContact(req.body);
+        const newContact = await Contact.create(req.body);
         res.status(201).json(newContact);
-    } catch (error) {
+   } catch (error) {
+       if (error.message.includes("validation faild")) {
+           error.status = 400;
+           error.message = "missing required name field"
+        }
         next(error);
     }
   
@@ -59,12 +56,16 @@ router.post('/', async (req, res, next) => {
 router.delete('/:contactId', async (req, res, next) => {
    try {
         const {contactId} = req.params;
-        const deleteContact = await contactsOperations.removeContact(contactId);
+        const deleteContact = await Contact.findByIdAndRemove(contactId);
         if(!deleteContact){
             throw new NotFound();
         }
         res.json({message: "contact deleted"})
-    } catch (error) {
+   } catch (error) {
+        if (error.message.includes("Cast to ObjectId failed")) {
+            error.status = 404;
+            error.message = "Not Found"
+        }
         next(error);
     }
  
@@ -72,20 +73,52 @@ router.delete('/:contactId', async (req, res, next) => {
 
 router.put('/:contactId', async (req, res, next) => {
    try {
-        const {error} = schemaUpdate.validate(req.body);
+         const {error} = schemaUpdate.validate(req.body);
         if(error){
-            throw new BadRequest("missing fields");
+            throw new BadRequest("validation faild");
         }
         const {contactId} = req.params;
-        const updateContact = await contactsOperations.updateContact({id: contactId, ...req.body});
+        const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {new: true});
         if(!updateContact){
             throw new NotFound();
         }
         res.json(updateContact);
-    } catch (error) {
+   } catch (error) {
+       if (error.message.includes("validation faild")) {
+            error.status = 400;
+       }
+        if (error.message.includes("Cast to ObjectId failed")) {
+            error.status = 404;
+            error.message = "Not Found"
+        }
         next(error);
     }
  
 })
+
+router.patch('/:contactId/favorite', async (req, res, next) => {
+   try {
+        
+       const { contactId } = req.params;
+       const {favorite} = req.body
+       const updateStatusContact = await Contact.findByIdAndUpdate(contactId, { favorite }, { new: true });
+       
+        if(favorite === undefined){
+            throw new BadRequest("missing field favorite");
+        }
+        res.json(updateStatusContact);
+   } catch (error) {
+       if (error.message.includes("validation faild")) {
+            error.status = 400;
+       }
+        if (error.message.includes("Cast to ObjectId failed")) {
+            error.status = 404;
+            error.message = "Not Found"
+        }
+        next(error);
+    }
+ 
+})
+
 
 module.exports = router
