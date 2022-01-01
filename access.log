@@ -95,3 +95,4 @@
 ::1 - - [25/Dec/2021:02:57:11 +0000] "PATCH /api/contacts/61c68578f24c4d6dcd53049/favorite HTTP/1.1" 404 23 "-" "PostmanRuntime/7.28.4"
 ::1 - - [25/Dec/2021:02:57:18 +0000] "PATCH /api/contacts/61c68578f24c4d6dcd53049a/favorite HTTP/1.1" 200 214 "-" "PostmanRuntime/7.28.4"
 ::1 - - [25/Dec/2021:02:57:31 +0000] "DELETE /api/contacts/61c68578f24c4d6dcd53049a HTTP/1.1" 200 29 "-" "PostmanRuntime/7.28.4"
+::1 - - [01/Jan/2022:20:33:38 +0000] "GET /api/contacts HTTP/1.1" 200 1449 "-" "PostmanRuntime/7.28.4"

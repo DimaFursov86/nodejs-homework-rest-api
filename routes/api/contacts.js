@@ -2,10 +2,11 @@ const express = require('express')
 const router = express.Router()
 const {schemaUpdate} = require('../../models/contact');
 const {Contact} = require('../../models');
-const {NotFound, BadRequest} = require("http-errors");
+const { NotFound, BadRequest } = require("http-errors");
+const {authenticate} = require("../../middlewares");
 
 
-router.get('/', async (req, res, next) => {
+router.get('/', authenticate, async (req, res, next) => {
   try{
         const contacts = await Contact.find();
         res.json(contacts);
@@ -16,7 +17,7 @@ router.get('/', async (req, res, next) => {
 
 })
 
-router.get('/:contactId', async (req, res, next) => {
+router.get('/:contactId', authenticate, async (req, res, next) => {
   const {contactId} = req.params;
     try {
         const contact = await Contact.findById(contactId);
@@ -35,7 +36,7 @@ router.get('/:contactId', async (req, res, next) => {
   
 })
 
-router.post('/', async (req, res, next) => {
+router.post('/', authenticate, async (req, res, next) => {
    try {
         const {error} = schemaUpdate.validate(req.body);
         if(error){
@@ -53,7 +54,7 @@ router.post('/', async (req, res, next) => {
   
 })
 
-router.delete('/:contactId', async (req, res, next) => {
+router.delete('/:contactId', authenticate, async (req, res, next) => {
    try {
         const {contactId} = req.params;
         const deleteContact = await Contact.findByIdAndRemove(contactId);
@@ -71,7 +72,7 @@ router.delete('/:contactId', async (req, res, next) => {
  
 })
 
-router.put('/:contactId', async (req, res, next) => {
+router.put('/:contactId', authenticate, async (req, res, next) => {
    try {
          const {error} = schemaUpdate.validate(req.body);
         if(error){
@@ -96,7 +97,7 @@ router.put('/:contactId', async (req, res, next) => {
  
 })
 
-router.patch('/:contactId/favorite', async (req, res, next) => {
+router.patch('/:contactId/favorite', authenticate, async (req, res, next) => {
    try {
         
        const { contactId } = req.params;
