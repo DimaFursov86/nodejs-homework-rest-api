@@ -11,7 +11,7 @@ const router = express.Router();
 
 const {SECRET_KEY} = process.env;
 
-// router.post("/signup")
+
 router.post("/signup", async(req, res, next) => {
     try {
         const {error} = joiSignupSchema.validate(req.body);
@@ -23,21 +23,14 @@ router.post("/signup", async(req, res, next) => {
         if(user){
             throw new Conflict("Email in use");
         }
-        // const newUser = new User({name, email});
-        /*
-        newUser = {
-            email, name
-        }
-        */
-        // newUser.setPassword(password);
-        // const result = newUser.save();
+      
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash(password, salt);
         const newUser = await User.create({subscription, email, password: hashPassword});
         res.status(201).json({
             user: {
-                subscription: newUser.name,
                 email: newUser.email,
+                subscription: newUser.subscription,
             }
         })
     } catch (error) {
@@ -46,7 +39,7 @@ router.post("/signup", async(req, res, next) => {
     }
 });
 
-// router.post("/signin")
+
 router.post("/login", async (req, res, next) => {
     try {
         const { error } = joiLoginSchema.validate(req.body);
@@ -62,14 +55,7 @@ router.post("/login", async (req, res, next) => {
         if (!passwordCompare) {
             throw new Unauthorized("Email or password is wrong");
         }
-        // if(!user){
-        //     throw new Unauthorized("Email not found")
-        // }
-        // // const passwordCompare = user.comparePassword(password);
-        // const passwordCompare = await bcrypt.compare(password, user.password);
-        // if(!passwordCompare){
-        //     throw new Unauthorized("Password wrong")
-        // }
+
         const { _id, subscription } = user;
         const payload = {
             id: _id

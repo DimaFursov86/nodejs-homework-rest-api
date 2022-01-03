@@ -7,8 +7,14 @@ const {authenticate} = require("../../middlewares");
 
 
 router.get('/', authenticate, async (req, res, next) => {
-  try{
-        const contacts = await Contact.find();
+    try {
+        
+        const { page = 1, limit = 10, favorite } = req.query;
+        const {_id} = req.user;
+        const skip = (page - 1) * limit;
+        const favoriteContacts = favorite ? favorite.includes('true') : undefined;
+        const contacts = await Contact.find({owner: _id, favorite: favoriteContacts ?? {$in: [true, false]}}, 
+            " ", {skip, limit: +limit});
         res.json(contacts);
     }
     catch(error){
@@ -16,6 +22,7 @@ router.get('/', authenticate, async (req, res, next) => {
     }
 
 })
+
 
 router.get('/:contactId', authenticate, async (req, res, next) => {
   const {contactId} = req.params;
@@ -41,8 +48,9 @@ router.post('/', authenticate, async (req, res, next) => {
         const {error} = schemaUpdate.validate(req.body);
         if(error){
             throw new BadRequest("missing required name field");
-        }
-        const newContact = await Contact.create(req.body);
+       }
+       const {_id} = req.user;
+        const newContact = await Contact.create({...req.body, owner: _id});
         res.status(201).json(newContact);
    } catch (error) {
        if (error.message.includes("validation faild")) {
