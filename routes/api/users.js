@@ -46,12 +46,19 @@ router.post("/signup", async(req, res, next) => {
 });
 
 router.patch("/avatars", authenticate, upload.single("avatar"), async(req, res)=> {
-   const {path: tempUpload, filename} = req.file;
+    const {path: tempUpload, filename} = req.file;
     const [extension] = filename.split(".").reverse();
-    const newFleName = `${req.user._id}.${extension}`;
-    const fileUpload = path.join(avatarsDir, newFleName);
+    const newFileName = `${req.user._id}.${extension}`;
+    const fileUpload = path.join(avatarsDir, newFileName);
     await fs.rename(tempUpload, fileUpload);
-    const avatarURL = path.join("avatars", newFleName);
+     Jimp.read(fileUpload, function (err, test) {
+        if (err) throw err;
+        test.resize(250, 250)
+            .quality(50)
+            .rotate( 90 )
+             .write(fileUpload); 
+    });
+    const avatarURL = path.join("avatars", newFileName);
     await User.findByIdAndUpdate(req.user._id, {avatarURL}, {new: true});
     res.json({avatarURL})
 });
