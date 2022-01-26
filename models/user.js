@@ -1,6 +1,6 @@
 const {Schema, model} = require("mongoose");
 const Joi = require("joi");
-// const bcrypt = require("bcryptjs");
+
 
 const emailRegexp = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i
 
