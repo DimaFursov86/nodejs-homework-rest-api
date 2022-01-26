@@ -8,6 +8,7 @@ const fs = require("fs/promises");
 const path = require("path");
 const Jimp = require("Jimp");
 const { nanoid } = require("nanoid");
+const ctrl = require('../../controllers/users')
 
 
 const {User} = require("../../models");
@@ -21,42 +22,7 @@ const avatarsDir = path.join(__dirname, "../../", "public", "avatars");
 
 const {SECRET_KEY, SITE_NAME} = process.env;
 
-router.post("/signup", async(req, res, next) => {
-    try {
-        const {error} = joiSignupSchema.validate(req.body);
-        if(error){
-            throw new BadRequest(error.message);
-        }
-        const {subscription, email, password} = req.body;
-        const user = await User.findOne({email});
-        if(user){
-            throw new Conflict("Email in use");
-        }
-      
-        const salt = await bcrypt.genSalt(10);
-        const hashPassword = await bcrypt.hash(password, salt);
-        const verificationToken = nanoid();
-        const avatarURL = gravatar.url(email);
-        const newUser = await User.create({ subscription, email, verificationToken, password: hashPassword, avatarURL });
-        
-         const data = {
-                to: email,
-                subject: "Подтверждение email",
-                html: `<a target="_blank" href="${SITE_NAME}/users/verify/${verificationToken}">Подтвердить email</a>`
-        }
-        await sendEmail(data);
-
-        res.status(201).json({
-            user: {
-                email: newUser.email,
-                subscription: newUser.subscription,
-            }
-        })
-    } catch (error) {
-
-        next(error);
-    }
-});
+router.post("/signup", ctrl.signup);
 
 router.patch("/avatars", authenticate, upload.single("avatar"), async(req, res)=> {
     const {path: tempUpload, filename} = req.file;
