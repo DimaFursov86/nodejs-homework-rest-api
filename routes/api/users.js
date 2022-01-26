@@ -1,117 +1,20 @@
 const express = require("express");
-const {BadRequest, Conflict, Unauthorized} = require("http-errors");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const {authenticate, upload} = require("../../middlewares");
-const gravatar = require("gravatar");
-const fs = require("fs/promises");
-const path = require("path");
-const Jimp = require("Jimp");
-
-const {User} = require("../../models");
-const {joiSignupSchema, joiLoginSchema} = require("../../models/user");
-
+const ctrl = require('../../controllers/users')
 const router = express.Router();
 
-const avatarsDir = path.join(__dirname, "../../", "public", "avatars");
+router.post("/signup", ctrl.signup);
 
-const {SECRET_KEY} = process.env;
+router.patch("/avatars", authenticate, upload.single("avatar"), ctrl.avatars);
 
-router.post("/signup", async(req, res, next) => {
-    try {
-        const {error} = joiSignupSchema.validate(req.body);
-        if(error){
-            throw new BadRequest(error.message);
-        }
-        const {subscription, email, password} = req.body;
-        const user = await User.findOne({email});
-        if(user){
-            throw new Conflict("Email in use");
-        }
-      
-        const salt = await bcrypt.genSalt(10);
-        const hashPassword = await bcrypt.hash(password, salt);
-        const avatarURL = gravatar.url(email);
-        const newUser = await User.create({subscription, email, password: hashPassword, avatarURL});
-        res.status(201).json({
-            user: {
-                email: newUser.email,
-                subscription: newUser.subscription,
-            }
-        })
-    } catch (error) {
+router.post("/login", ctrl.login);
 
-        next(error);
-    }
-});
+router.get("/logout", authenticate, ctrl.logout);
 
-router.patch("/avatars", authenticate, upload.single("avatar"), async(req, res)=> {
-    const {path: tempUpload, filename} = req.file;
-    const [extension] = filename.split(".").reverse();
-    const newFileName = `${req.user._id}.${extension}`;
-    const fileUpload = path.join(avatarsDir, newFileName);
-    await fs.rename(tempUpload, fileUpload);
-     Jimp.read(fileUpload, function (err, test) {
-        if (err) throw err;
-        test.resize(250, 250)
-            .quality(50)
-            .rotate( 90 )
-             .write(fileUpload); 
-    });
-    const avatarURL = path.join("avatars", newFileName);
-    await User.findByIdAndUpdate(req.user._id, {avatarURL}, {new: true});
-    res.json({avatarURL})
-});
+router.get("/current", authenticate, ctrl.getCurrent);
 
+router.post("/verify", ctrl.verify)
 
-router.post("/login", async (req, res, next) => {
-    try {
-        const { error } = joiLoginSchema.validate(req.body);
-        if (error) {
-            throw new BadRequest(error.message);
-        }
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) {
-            throw new Unauthorized("Email or password is wrong");
-        }
-        const passwordCompare = await bcrypt.compare(password, user.password);
-        if (!passwordCompare) {
-            throw new Unauthorized("Email or password is wrong");
-        }
-
-        const { _id, subscription } = user;
-        const payload = {
-            id: _id
-        };
-        const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "1h" });
-        await User.findByIdAndUpdate(_id, { token });
-        res.json({
-            token,
-            user: {
-                email,
-                subscription
-            }
-        })
-
-    } catch (error) {
-        next(error);
-    }
-});
-router.get("/logout", authenticate, async(req, res)=> {
-    const {_id} = req.user;
-    await User.findByIdAndUpdate(_id, {token: null});
-    res.status(204).send();
-});
-
-router.get("/current", authenticate, async(req, res)=> {
-    const {subscription, email} = req.user;
-    res.json({
-        user: {
-            subscription,
-            email
-        }
-    })
-})
+router.get("/verify/:verificationToken", ctrl.getVerifyToken)
 
 module.exports = router;
